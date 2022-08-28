@@ -15,7 +15,8 @@ set ::env(PL_RESIZER_BUFFER_OUTPUT_PORTS) 0
 set ::env(SYNTH_READ_BLACKBOX_LIB) 1
 
 # HACK: explicitly specify which files we are using, ignore TB etc.
-set ::env(VERILOG_FILES) "$::env(DESIGN_DIR)/user_module_341244947682296404.v \
+set ::env(VERILOG_FILES) "$::env(DESIGN_DIR)/cpu.v \
+$::env(DESIGN_DIR)/user_module_341244947682296404.v \
 $::env(DESIGN_DIR)/scan_wrapper_341244947682296404.v"
 
 # absolute die size
