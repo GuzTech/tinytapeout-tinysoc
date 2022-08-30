@@ -33,6 +33,7 @@ module RegFileSingle #(
     parameter DATA_WIDTH = 4,
     parameter ADDR_WIDTH = 4
 ) (
+    input  wire                  clk,
     input  wire                  rst,
     input  wire [ADDR_WIDTH-1:0] r_addr,
     output wire [DATA_WIDTH-1:0] r_data,
@@ -46,7 +47,7 @@ module RegFileSingle #(
     assign r_data = int_regs[r_addr];
 
     integer i;
-    always @(*) begin
+    always @(posedge clk) begin
         if (rst) begin
             for (i = 0; i < (2**ADDR_WIDTH); i = i + 1) begin
                 int_regs[i] = {DATA_WIDTH{1'b0}};
@@ -63,6 +64,7 @@ module RegFileDual #(
     parameter DATA_WIDTH = 4,
     parameter ADDR_WIDTH = 4
 ) (
+    input  wire                  clk,
     input  wire                  rst,
     input  wire [ADDR_WIDTH-1:0] r_addr1,
     input  wire [ADDR_WIDTH-1:0] r_addr2,
@@ -79,7 +81,7 @@ module RegFileDual #(
     assign r_data2 = int_regs[r_addr2];
 
     integer i;
-    always @(*) begin
+    always @(posedge clk) begin
         if (rst) begin
             for (i = 0; i < (2**ADDR_WIDTH); i = i + 1) begin
                 int_regs[i] = {DATA_WIDTH{1'b0}};
@@ -140,6 +142,7 @@ module CPU (
         .DATA_WIDTH(4),
         .ADDR_WIDTH(3)
     ) i_rf (
+        .clk    (clk),
         .rst    (rst),
         .r_addr1(int_rs1),
         .r_addr2(int_rs2),
@@ -332,6 +335,7 @@ module tinysoc (
         .DATA_WIDTH(16),
         .ADDR_WIDTH(4)
     ) i_mem (
+        .clk   (clk),
         .rst   (rst),
         .r_addr(int_cpu_i_addr),
         .r_data(int_cpu_instr),
@@ -344,6 +348,7 @@ module tinysoc (
 		.DATA_WIDTH(4),
 		.ADDR_WIDTH(4)
 	) d_mem (
+        .clk   (clk),
 		.rst   (rst),
 		.r_addr(int_cpu_d_addr),
 		.r_data(int_cpu_d_data_i),
