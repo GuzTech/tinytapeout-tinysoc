@@ -20,14 +20,14 @@
 //   0  0  0     rd     rs2    rs1   A B C
 
 // ALU instruction (A B C):
-// 000: Add				= [rs1] + [rs2] -> [rd]
-// 001: And				= [rs1] & [rs2] -> [rd]
-// 010: Or					= [rs1] | [rs2] -> [rd]
-// 011: Xor				= [rs1] ^ [rs2] -> [rd]
-// 100: Not				= ~[rs1] -> [rd]
-// 101: Eq					= [rs1] == [rs2] -> [rd][0]
-// 110: Less than			= [rs1] < [rs2] -> [rd][0]
-// 111: Shift left 1 bit	= [rs1] << 1 -> [rd]
+// 000: Add          = [rs1] + [rs2] -> [rd]
+// 001: And          = [rs1] & [rs2] -> [rd]
+// 010: Or           = [rs1] | [rs2] -> [rd]
+// 011: Xor          = [rs1] ^ [rs2] -> [rd]
+// 100: Not          = ~[rs1] -> [rd]
+// 101: Eq           = [rs1] == [rs2] -> [rd][0]
+// 110: Less than    = [rs1] < [rs2] -> [rd][0]
+// 111: AShift right = {[rs1][3], [rs1][3:1]} -> [rd]
 
 // Load type:
 // [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
@@ -66,7 +66,7 @@ module ALU (
     localparam [2:0] ALU_NOT = 3'b100;
     localparam [2:0] ALU_EQ  = 3'b101;
     localparam [2:0] ALU_LT  = 3'b110;
-    localparam [2:0] ALU_LSH = 3'b111;
+    localparam [2:0] ALU_RSH = 3'b111;
 
     reg int_xor_src2;
     wire int_xor_out;
@@ -91,7 +91,7 @@ module ALU (
                 out          = !(|int_xor_out);
             end
             ALU_LT:  out = in1;// < in2;
-            ALU_LSH: out = in1 << 1;
+            ALU_RSH: out = {in1[3], in1[3:1]};
         endcase
     end
 endmodule
@@ -172,7 +172,8 @@ module CPU (
     input  wire  [3:0] d_data_i,
     output wire  [2:0] d_addr,
     output wire        d_wr,
-    output reg   [3:0] gpo
+    output reg   [3:0] gpo,
+    input  wire  [3:0] gpi
 );
 // ======== Misc ======== //
 	wire [3:0] int_addr;
@@ -314,10 +315,18 @@ module CPU (
 			int_ddata = d_data_i;
 		end else if (int_type_imm) begin
 			int_ddata = instr[3:0];
-		end else begin
+        end else if (int_type_load && int_addr[3]) begin
+            int_ddata = gpi;
+        end else begin
 			int_ddata = int_alu_out;
 		end	
 	end
+
+    always @(posedge clk) begin
+        if (int_type_load && int_addr[3]) begin
+
+        end
+    end
 
 endmodule
 
