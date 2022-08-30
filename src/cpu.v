@@ -299,7 +299,7 @@ module CPU (
 		if (rst) begin
 			gpo <= 4'd0;
 		end else begin
-			if (int_type_store && (int_addr == 4'h8)) begin
+			if (int_type_store && int_addr[3]) begin
 				gpo <= int_rdata1;
 			end
 		end
@@ -307,7 +307,7 @@ module CPU (
 
 	assign d_addr   = int_addr;
 	assign d_data_o = int_rdata1;
-	assign d_wr     = (int_type_store && (int_addr != 3'h7));
+	assign d_wr     = (int_type_store && (!int_addr[3]));
 
 	always @(*) begin
 		if (int_type_store) begin
