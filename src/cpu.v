@@ -15,14 +15,28 @@ module ALU (
     localparam [2:0] ALU_LT  = 3'b110;
     localparam [2:0] ALU_LSH = 3'b111;
 
+    wire int_xor_src2;
+    wire int_xor_out;
+
+    assign int_xor_out = in1 ^ int_xor_src2;
+
     always @(*) begin
         case (alu)
             ALU_ADD: out = in1 + in2;
             ALU_AND: out = in1 & in2;
             ALU_OR:  out = in1 | in2;
-            ALU_XOR: out = in1 ^ in2;
-            ALU_NOT: out = ~in1;
-            ALU_EQ:  out = in1 == in2;
+            ALU_XOR: begin
+                int_xor_src2 = in2;
+                out          = int_xor_out;
+            end
+            ALU_NOT: begin
+                int_xor_src2 = 4'b1111;
+                out          = int_xor_out;
+            end
+            ALU_EQ: begin
+                int_xor_src2 = in2;
+                out          = !(|int_xor_out);
+            end
             ALU_LT:  out = in1 < in2;
             ALU_LSH: out = in1 << 1;
         endcase
