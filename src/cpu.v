@@ -175,7 +175,7 @@ module CPU (
     output reg   [3:0] gpo
 );
 // ======== Misc ======== //
-	wire [2:0] int_addr;
+	wire [3:0] int_addr;
 	
 	// assign int_addr = instr[3:0];
     assign int_addr = int_rdata1;
@@ -338,7 +338,7 @@ module tinysoc (
     reg [1:0] int_quintet_cntr;
 
     // Instruction memory location being written to.
-    reg [3:0] int_imem_addr;
+    reg [2:0] int_imem_addr;
 
     // Store the first 2 "quintets".
     reg [9:0] int_wr_data;
