@@ -100,10 +100,10 @@ module CPU (
     input  wire        en,
     input  wire [15:0] instr,
     input  wire  [3:0] i_data,
-    input  wire  [3:0] i_addr,
+    input  wire  [2:0] i_addr,
     output wire  [3:0] d_data_o,
     input  wire  [3:0] d_data_i,
-    output wire  [3:0] d_addr,
+    output wire  [2:0] d_addr,
     output wire        d_wr,
     output reg   [3:0] gpo
 );
@@ -282,7 +282,7 @@ module tinysoc (
     wire int_wr;
 
     // The CPU instruction address.
-    wire [3:0] int_cpu_i_addr;
+    wire [2:0] int_cpu_i_addr;
 
     // The CPU instruction data.
     wire [15:0] int_cpu_instr;
@@ -294,7 +294,7 @@ module tinysoc (
 	wire [3:0] int_cpu_d_data_i;
 
 	// The CPU data memory address.
-	wire [3:0] int_cpu_d_addr;
+	wire [2:0] int_cpu_d_addr;
 
 	// The CPU data memory write flag.
 	wire int_cpu_d_wr;
@@ -306,7 +306,7 @@ module tinysoc (
         if (rst) begin
             int_rom_done    <= 1'b0;
             int_nibble_cntr <= 2'd0;
-            int_imem_addr   <= 4'd0;
+            int_imem_addr   <= 3'd0;
             int_wr_data     <= 12'd0;
         end else begin
             if (!int_rom_done) begin
@@ -324,7 +324,7 @@ module tinysoc (
                     int_imem_addr   <= int_imem_addr + 1'b1;
                 end
 
-                if ((int_imem_addr == 4'd15) && (int_nibble_cntr == 2'd3)) begin
+                if ((int_imem_addr == 3'd7) && (int_nibble_cntr == 2'd3)) begin
                     int_rom_done <= 1'b1;
                 end
             end
@@ -333,7 +333,7 @@ module tinysoc (
 
     RegFileSingle #(
         .DATA_WIDTH(16),
-        .ADDR_WIDTH(4)
+        .ADDR_WIDTH(3)
     ) i_mem (
         .clk   (clk),
         .rst   (rst),
@@ -346,7 +346,7 @@ module tinysoc (
 
 	RegFileSingle #(
 		.DATA_WIDTH(4),
-		.ADDR_WIDTH(4)
+		.ADDR_WIDTH(3)
 	) d_mem (
         .clk   (clk),
 		.rst   (rst),
