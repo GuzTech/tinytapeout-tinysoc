@@ -1,5 +1,58 @@
 `default_nettype none
 
+// Super simple 4-bit CPU!
+
+// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
+//  I-type       rd     rs2    rs1  ALU/Addr
+
+// I-type [14:12]:
+// 000: ALU
+// 001: Load
+// 010: Store
+// 011: Immediate
+// 100: Jump
+// 101: Conditional jump
+// 110: undefined
+// 111: undefined
+
+// ALU type:
+// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
+//   0  0  0     rd     rs2    rs1   A B C
+
+// ALU instruction (A B C):
+// 000: Add				= [rs1] + [rs2] -> [rd]
+// 001: And				= [rs1] & [rs2] -> [rd]
+// 010: Or					= [rs1] | [rs2] -> [rd]
+// 011: Xor				= [rs1] ^ [rs2] -> [rd]
+// 100: Not				= ~[rs1] -> [rd]
+// 101: Eq					= [rs1] == [rs2] -> [rd][0]
+// 110: Less than			= [rs1] < [rs2] -> [rd][0]
+// 111: Shift left 1 bit	= [rs1] << 1 -> [rd]
+
+// Load type:
+// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
+//   0  0  1     rd    X X X   rs1   X X X	(X = don't care)
+
+// [[rs1]] -> [rd]
+
+// Store type:
+// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
+//   0  1  0     rd    X X X   rs1   X X X	(X = don't care)
+
+// [rs1] -> [[rd]]
+
+// Immediate type:
+// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
+//   0  1  1     rd    X X X  X X D  C B A	(X = don't care)
+
+// DCBA -> [rd]
+
+// Jump type:
+// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
+//   1  0  0   X  X X  X X X   rs1   X X X
+
+// [rs1] -> PC
+
 module ALU (
     input  wire [3:0] in1,
     input  wire [3:0] in2,
@@ -15,7 +68,7 @@ module ALU (
     localparam [2:0] ALU_LT  = 3'b110;
     localparam [2:0] ALU_LSH = 3'b111;
 
-    wire int_xor_src2;
+    reg int_xor_src2;
     wire int_xor_out;
 
     assign int_xor_out = in1 ^ int_xor_src2;
@@ -37,7 +90,7 @@ module ALU (
                 int_xor_src2 = in2;
                 out          = !(|int_xor_out);
             end
-            ALU_LT:  out = in1 < in2;
+            ALU_LT:  out = in1;// < in2;
             ALU_LSH: out = in1 << 1;
         endcase
     end
@@ -112,7 +165,7 @@ module CPU (
     input  wire        clk,
     input  wire        rst,
     input  wire        en,
-    input  wire [15:0] instr,
+    input  wire [14:0] instr,
     input  wire  [3:0] i_data,
     input  wire  [2:0] i_addr,
     output wire  [3:0] d_data_o,
@@ -122,9 +175,10 @@ module CPU (
     output reg   [3:0] gpo
 );
 // ======== Misc ======== //
-	wire [3:0] int_addr;
+	wire [2:0] int_addr;
 	
-	assign int_addr = instr[3:0];
+	// assign int_addr = instr[3:0];
+    assign int_addr = int_rdata1;
 
 // ======== Register file ======== //
     // Source register 1 address.
@@ -148,9 +202,9 @@ module CPU (
     // Register write flag.
     wire int_wr_reg;
 
-    assign int_rs1 = instr[6:4];
-    assign int_rs2 = instr[9:7];
-    assign int_rd  = instr[12:10];
+    assign int_rs1 = instr[5:3];
+    assign int_rs2 = instr[8:6];
+    assign int_rd  = instr[11:9];
 
     RegFileDual #(
         .DATA_WIDTH(4),
@@ -204,7 +258,7 @@ module CPU (
     wire int_type_jump;
     wire int_type_cjump;
 
-    assign int_type       = instr[15:13];
+    assign int_type       = instr[14:12];
     assign int_type_alu   = int_type == TYPE_ALU;
     assign int_type_load  = int_type == TYPE_LOAD;
     assign int_type_store = int_type == TYPE_STORE;
@@ -217,13 +271,13 @@ module CPU (
 // ======== PC ======== //
 
     // Program counter.
-    reg [3:0] pc;
+    reg [2:0] pc;
 
 	assign i_addr = pc;
 
     always @(posedge clk) begin
         if (rst) begin
-            pc <= 4'd0;
+            pc <= 3'd0;
         end else if (en) begin
             if (int_type_jump) begin
                 pc <= int_rdata1;
@@ -253,7 +307,7 @@ module CPU (
 
 	assign d_addr   = int_addr;
 	assign d_data_o = int_rdata1;
-	assign d_wr     = (int_type_store && (int_addr != 4'h8));
+	assign d_wr     = (int_type_store && (int_addr != 3'h7));
 
 	always @(*) begin
 		if (int_type_store) begin
@@ -281,16 +335,16 @@ module tinysoc (
 
     // We load a nibble per clock cycle,
     // so keep track of which nibble we are writing.
-    reg [1:0] int_nibble_cntr;
+    reg [1:0] int_quintet_cntr;
 
     // Instruction memory location being written to.
     reg [3:0] int_imem_addr;
 
-    // Store the first 3 nibbles.
-    reg [11:0] int_wr_data;
+    // Store the first 2 "quintets".
+    reg [9:0] int_wr_data;
 
     // The ROM data.
-    wire [15:0] int_w_data;
+    wire [14:0] int_w_data;
 
     // The ROM write flag.
     wire int_wr;
@@ -299,7 +353,7 @@ module tinysoc (
     wire [2:0] int_cpu_i_addr;
 
     // The CPU instruction data.
-    wire [15:0] int_cpu_instr;
+    wire [14:0] int_cpu_instr;
 
 	// The CPU data memory write data.
 	wire [3:0] int_cpu_d_data_o;
@@ -313,32 +367,29 @@ module tinysoc (
 	// The CPU data memory write flag.
 	wire int_cpu_d_wr;
 
-    assign int_w_data = {io_in[7:4], int_wr_data};
-    assign int_wr     = (int_nibble_cntr == 2'd3);
+    assign int_w_data = {io_in[7:3], int_wr_data};
+    assign int_wr     = (int_quintet_cntr == 2'd2);
 
     always @(posedge clk) begin
         if (rst) begin
-            int_rom_done    <= 1'b0;
-            int_nibble_cntr <= 2'd0;
-            int_imem_addr   <= 3'd0;
-            int_wr_data     <= 12'd0;
+            int_rom_done     <= 1'b0;
+            int_quintet_cntr <= 2'd0;
+            int_imem_addr    <= 3'd0;
+            int_wr_data      <= 10'd0;
         end else begin
             if (!int_rom_done) begin
-                if (int_nibble_cntr == 2'd0) begin
-                    int_wr_data[3:0] <= io_in[7:4];
-                    int_nibble_cntr  <= int_nibble_cntr + 1'b1;
-                end else if (int_nibble_cntr == 2'd1) begin
-                    int_wr_data[7:4] <= io_in[7:4];
-                    int_nibble_cntr  <= int_nibble_cntr + 1'b1;
-                end else if (int_nibble_cntr == 2'd2) begin
-                    int_wr_data[11:8] <= io_in[7:4];
-                    int_nibble_cntr   <= int_nibble_cntr + 1'b1;
-                end else if (int_nibble_cntr == 2'd3) begin
-                    int_nibble_cntr <= int_nibble_cntr + 1'b1;
-                    int_imem_addr   <= int_imem_addr + 1'b1;
+                if (int_quintet_cntr == 2'd0) begin
+                    int_wr_data[4:0] <= io_in[7:3];
+                    int_quintet_cntr <= int_quintet_cntr + 1'b1;
+                end else if (int_quintet_cntr == 2'd1) begin
+                    int_wr_data[9:5] <= io_in[7:3];
+                    int_quintet_cntr <= int_quintet_cntr + 1'b1;
+                end else if (int_quintet_cntr == 2'd2) begin
+                    int_quintet_cntr <= 2'd0;
+                    int_imem_addr    <= int_imem_addr + 1'b1;
                 end
 
-                if ((int_imem_addr == 3'd7) && (int_nibble_cntr == 2'd3)) begin
+                if ((int_imem_addr == 3'd7) && (int_quintet_cntr == 2'd2)) begin
                     int_rom_done <= 1'b1;
                 end
             end
@@ -346,7 +397,7 @@ module tinysoc (
     end
 
     RegFileSingle #(
-        .DATA_WIDTH(16),
+        .DATA_WIDTH(15),
         .ADDR_WIDTH(3)
     ) i_mem (
         .clk   (clk),

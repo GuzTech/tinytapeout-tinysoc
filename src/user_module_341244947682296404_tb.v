@@ -14,6 +14,8 @@ module user_module_341244947682296404_tb;
     reg  [7:0] io_in;
     wire [7:0] io_out;
 
+	reg [14:0] instr;
+
     // DUT
     user_module_341244947682296404
     DUT (
@@ -48,35 +50,51 @@ module user_module_341244947682296404_tb;
         @(negedge io_in[1]);
 
 		// We need to provide our design with
-		// 16 16-bit instructions in chunks of
-		// 4 nibbles for each instruction.
+		// 8 15-bit instructions in chunks of
+		// 3 "quintets" for each instruction.
 
 		// imem[0] = IMM 4 -> Reg[6]
-		io_in[7:4] = 4'h4; #CLK_PERIOD;
-		io_in[7:4] = 4'h0; #CLK_PERIOD;
-		io_in[7:4] = 4'b10_00; #CLK_PERIOD;
-		io_in[7:4] = 4'b011_1; #CLK_PERIOD;
+		instr = 15'b011_110_000_00_0100;
+		io_in[7:3] = instr[4:0]; #CLK_PERIOD;
+		io_in[7:3] = instr[9:5]; #CLK_PERIOD;
+		io_in[7:3] = instr[14:10]; #CLK_PERIOD;
+//		io_in[7:3] = 4'h4; #CLK_PERIOD;
+//		io_in[7:3] = 4'h0; #CLK_PERIOD;
+//		io_in[7:3] = 4'b10_00; #CLK_PERIOD;
+//		io_in[7:3] = 4'b011_1; #CLK_PERIOD;
 
 		// imem[1] = IMM 1 -> Reg[5]
-		io_in[7:4] = 4'h1; #CLK_PERIOD;
-		io_in[7:4] = 4'h0; #CLK_PERIOD;
-		io_in[7:4] = 4'b01_00; #CLK_PERIOD;
-		io_in[7:4] = 4'b011_1; #CLK_PERIOD;
+		instr = 15'b011_101_000_00_0001;
+		io_in[7:3] = instr[4:0]; #CLK_PERIOD;
+		io_in[7:3] = instr[9:5]; #CLK_PERIOD;
+		io_in[7:3] = instr[14:10]; #CLK_PERIOD;
+//		io_in[7:4] = 4'h1; #CLK_PERIOD;
+//		io_in[7:4] = 4'h0; #CLK_PERIOD;
+//		io_in[7:4] = 4'b01_00; #CLK_PERIOD;
+//		io_in[7:4] = 4'b011_1; #CLK_PERIOD;
 		
 		// imem[2] = ALU Reg[6] + Reg[5] -> Reg[6]
-		io_in[7:4] = 4'h0; #CLK_PERIOD;
-		io_in[7:4] = 4'b1_110; #CLK_PERIOD;
-		io_in[7:4] = 4'b10_10; #CLK_PERIOD;
-		io_in[7:4] = 4'b000_1; #CLK_PERIOD;
+		instr = 15'b000_110_101_110_000;
+		io_in[7:3] = instr[4:0]; #CLK_PERIOD;
+		io_in[7:3] = instr[9:5]; #CLK_PERIOD;
+		io_in[7:3] = instr[14:10]; #CLK_PERIOD;
+//		io_in[7:4] = 4'h0; #CLK_PERIOD;
+//		io_in[7:4] = 4'b1_110; #CLK_PERIOD;
+//		io_in[7:4] = 4'b10_10; #CLK_PERIOD;
+//		io_in[7:4] = 4'b000_1; #CLK_PERIOD;
 
-		// imem[3] = JUMP -> 0
-		io_in[7:4] = 4'h0; #CLK_PERIOD;
-		io_in[7:4] = 4'h0; #CLK_PERIOD;
-		io_in[7:4] = 4'h0; #CLK_PERIOD;
-		io_in[7:4] = 4'h8; #CLK_PERIOD;
+		// imem[3] = JUMP -> [r5]
+		instr = 15'b100_000_000_101_000;
+		io_in[7:3] = instr[4:0]; #CLK_PERIOD;
+		io_in[7:3] = instr[9:5]; #CLK_PERIOD;
+		io_in[7:3] = instr[14:10]; #CLK_PERIOD;
+//		io_in[7:4] = 4'h0; #CLK_PERIOD;
+//		io_in[7:4] = 4'h0; #CLK_PERIOD;
+//		io_in[7:4] = 4'h0; #CLK_PERIOD;
+//		io_in[7:4] = 4'h8; #CLK_PERIOD;
 
 		// imem[15:4]
-		io_in[7:4] = 4'h0;
+		io_in[7:3] = 5'h0;
 		repeat (48) #CLK_PERIOD
 
 		repeat (16) #CLK_PERIOD;
