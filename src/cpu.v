@@ -166,7 +166,6 @@ module CPU (
     input  wire        rst,
     input  wire        en,
     input  wire [11:0] instr,
-    input  wire  [3:0] i_data,
     input  wire  [2:0] i_addr,
     output wire  [3:0] d_data_o,
     input  wire  [3:0] d_data_i,
@@ -176,10 +175,10 @@ module CPU (
     input  wire  [3:0] gpi
 );
 // ======== Misc ======== //
-	wire [2:0] int_addr;
+	wire [3:0] int_addr;
 	
 	// assign int_addr = instr[3:0];
-    assign int_addr = int_rdata1[2:0];
+    assign int_addr = {1'b0, int_rdata1[2:0]};
 
 // ======== Register file ======== //
     // Source register 1 address.
@@ -434,7 +433,6 @@ module tinysoc (
         .rst     (rst),
         .en      (int_rom_done),
         .instr   (int_cpu_instr),
-        .i_data  (int_cpu_instr),
         .i_addr  (int_cpu_i_addr),
         .d_data_o(int_cpu_d_data_o),
         .d_data_i(int_cpu_d_data_i),
