@@ -2,10 +2,10 @@
 
 // Super simple 4-bit CPU!
 
-// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
-//  I-type       rd     rs2    rs1  ALU/Addr
+// [11 10 9][8 7][6 5][4 3][2 1 0]
+//  I-type   rd   rs2  rs1 ALU/Addr
 
-// I-type [14:12]:
+// I-type [11:9]:
 // 000: ALU
 // 001: Load
 // 010: Store
@@ -16,8 +16,8 @@
 // 111: undefined
 
 // ALU type:
-// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
-//   0  0  0     rd     rs2    rs1   A B C
+// [11 10 9][8 7][6 5][4 3][2 1 0]
+//   0  0  0  rd  rs2  rs1  A B C
 
 // ALU instruction (A B C):
 // 000: Add          = [rs1] + [rs2] -> [rd]
@@ -30,26 +30,26 @@
 // 111: AShift right = {[rs1][3], [rs1][3:1]} -> [rd]
 
 // Load type:
-// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
-//   0  0  1     rd    X X X   rs1   X X X	(X = don't care)
+// [11 10 9][8 7][6 5][4 3][2 1 0]
+//   0  0 1   rd  X X  rs1  X X X    (X = don't care)
 
 // [[rs1]] -> [rd]
 
 // Store type:
-// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
-//   0  1  0     rd    X X X   rs1   X X X	(X = don't care)
+// [11 10 9][8 7][6 5][4 3][2 1 0]
+//   0  1 0   rd  X X  rs1  X X X    (X = don't care)
 
 // [rs1] -> [[rd]]
 
 // Immediate type:
-// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
-//   0  1  1     rd    X X X  X X D  C B A	(X = don't care)
+// [11 10 9][8 7][6 5][4 3][2 1 0]
+//   0  1  1  rd  X X  X D  C B A    (X = don't care)
 
 // DCBA -> [rd]
 
 // Jump type:
-// [14 13 12][11 10 9][8 7 6][5 4 3][2 1 0]
-//   1  0  0   X  X X  X X X   rs1   X X X
+// [11 10 9][8 7][6 5][4 3][2 1 0]
+//   1  0 0  X X  X X  rs1  X X X    (X = don't care)
 
 // [rs1] -> PC
 
@@ -165,7 +165,7 @@ module CPU (
     input  wire        clk,
     input  wire        rst,
     input  wire        en,
-    input  wire [14:0] instr,
+    input  wire [11:0] instr,
     input  wire  [3:0] i_data,
     input  wire  [2:0] i_addr,
     output wire  [3:0] d_data_o,
@@ -176,20 +176,20 @@ module CPU (
     input  wire  [3:0] gpi
 );
 // ======== Misc ======== //
-	wire [3:0] int_addr;
+	wire [2:0] int_addr;
 	
 	// assign int_addr = instr[3:0];
-    assign int_addr = int_rdata1;
+    assign int_addr = int_rdata1[2:0];
 
 // ======== Register file ======== //
     // Source register 1 address.
-    wire [2:0] int_rs1;
+    wire [1:0] int_rs1;
 
     // Source register 2 address.
-    wire [2:0] int_rs2;
+    wire [1:0] int_rs2;
 
     // Destination register address.
-    wire [2:0] int_rd;
+    wire [1:0] int_rd;
 
     // Source register 1 data.
     wire [3:0] int_rdata1;
@@ -203,13 +203,13 @@ module CPU (
     // Register write flag.
     wire int_wr_reg;
 
-    assign int_rs1 = instr[5:3];
-    assign int_rs2 = instr[8:6];
-    assign int_rd  = instr[11:9];
+    assign int_rs1 = instr[4:3];
+    assign int_rs2 = instr[6:5];
+    assign int_rd  = instr[8:7];
 
     RegFileDual #(
         .DATA_WIDTH(4),
-        .ADDR_WIDTH(3)
+        .ADDR_WIDTH(2)
     ) i_rf (
         .clk    (clk),
         .rst    (rst),
@@ -259,7 +259,7 @@ module CPU (
     wire int_type_jump;
     wire int_type_cjump;
 
-    assign int_type       = instr[14:12];
+    assign int_type       = instr[11:9];
     assign int_type_alu   = int_type == TYPE_ALU;
     assign int_type_load  = int_type == TYPE_LOAD;
     assign int_type_store = int_type == TYPE_STORE;
@@ -342,18 +342,18 @@ module tinysoc (
     // Indicates if the rom is done being initialized.
     reg int_rom_done;
 
-    // We load a nibble per clock cycle,
-    // so keep track of which nibble we are writing.
-    reg [1:0] int_quintet_cntr;
+    // We load 6-bits words per clock cycle,
+    // so keep track of which word we are writing.
+    reg int_word_cntr;
 
     // Instruction memory location being written to.
     reg [2:0] int_imem_addr;
 
-    // Store the first 2 "quintets".
-    reg [9:0] int_wr_data;
+    // Stores the first word
+    reg [5:0] int_wr_data;
 
     // The ROM data.
-    wire [14:0] int_w_data;
+    wire [11:0] int_w_data;
 
     // The ROM write flag.
     wire int_wr;
@@ -362,7 +362,7 @@ module tinysoc (
     wire [2:0] int_cpu_i_addr;
 
     // The CPU instruction data.
-    wire [14:0] int_cpu_instr;
+    wire [11:0] int_cpu_instr;
 
 	// The CPU data memory write data.
 	wire [3:0] int_cpu_d_data_o;
@@ -376,29 +376,26 @@ module tinysoc (
 	// The CPU data memory write flag.
 	wire int_cpu_d_wr;
 
-    assign int_w_data = {io_in[7:3], int_wr_data};
-    assign int_wr     = (int_quintet_cntr == 2'd2);
+    assign int_w_data = {io_in[7:2], int_wr_data};
+    assign int_wr     = (int_word_cntr == 1'b1);
 
     always @(posedge clk) begin
         if (rst) begin
-            int_rom_done     <= 1'b0;
-            int_quintet_cntr <= 2'd0;
-            int_imem_addr    <= 3'd0;
-            int_wr_data      <= 10'd0;
+            int_rom_done  <= 1'b0;
+            int_word_cntr <= 1'b0;
+            int_imem_addr <= 3'd0;
+            int_wr_data   <= 6'd0;
         end else begin
             if (!int_rom_done) begin
-                if (int_quintet_cntr == 2'd0) begin
-                    int_wr_data[4:0] <= io_in[7:3];
-                    int_quintet_cntr <= int_quintet_cntr + 1'b1;
-                end else if (int_quintet_cntr == 2'd1) begin
-                    int_wr_data[9:5] <= io_in[7:3];
-                    int_quintet_cntr <= int_quintet_cntr + 1'b1;
-                end else if (int_quintet_cntr == 2'd2) begin
-                    int_quintet_cntr <= 2'd0;
-                    int_imem_addr    <= int_imem_addr + 1'b1;
+                if (int_word_cntr == 1'b0) begin
+                    int_wr_data[5:0] <= io_in[7:2];
+                    int_word_cntr    <= int_word_cntr + 1'b1;
+                end else if (int_word_cntr == 1'b1) begin
+                    int_word_cntr <= 1'b0;
+                    int_imem_addr <= int_imem_addr + 1'b1;
                 end
 
-                if ((int_imem_addr == 3'd7) && (int_quintet_cntr == 2'd2)) begin
+                if ((int_imem_addr == 3'd7) && (int_word_cntr == 1'b1)) begin
                     int_rom_done <= 1'b1;
                 end
             end
@@ -406,7 +403,7 @@ module tinysoc (
     end
 
     RegFileSingle #(
-        .DATA_WIDTH(15),
+        .DATA_WIDTH(12),
         .ADDR_WIDTH(3)
     ) i_mem (
         .clk   (clk),
