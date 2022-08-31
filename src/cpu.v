@@ -119,11 +119,11 @@ module RegFileSingle #(
     always @(posedge clk) begin
         if (rst) begin
             for (i = 0; i < (2**ADDR_WIDTH); i = i + 1) begin
-                int_regs[i] = {DATA_WIDTH{1'b0}};
+                int_regs[i] <= {DATA_WIDTH{1'b0}};
             end
         end else begin
             if (wr) begin
-                int_regs[w_addr] = w_data;
+                int_regs[w_addr] <= w_data;
             end
         end
     end
@@ -153,11 +153,11 @@ module RegFileDual #(
     always @(posedge clk) begin
         if (rst) begin
             for (i = 0; i < (2**ADDR_WIDTH); i = i + 1) begin
-                int_regs[i] = {DATA_WIDTH{1'b0}};
+                int_regs[i] <= {DATA_WIDTH{1'b0}};
             end
         end else begin
             if (wr) begin
-                int_regs[w_addr] = w_data;
+                int_regs[w_addr] <= w_data;
             end
         end
     end
