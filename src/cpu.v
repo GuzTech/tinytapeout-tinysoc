@@ -74,6 +74,8 @@ module ALU (
     assign int_xor_out = in1 ^ int_xor_src2;
 
     always @(*) begin
+        int_xor_src2 = 4'd0;
+
         case (alu)
             ALU_ADD: out = in1 + in2;
             ALU_AND: out = in1 & in2;
@@ -166,7 +168,7 @@ module CPU (
     input  wire        rst,
     input  wire        en,
     input  wire [11:0] instr,
-    input  wire  [2:0] i_addr,
+    output wire  [2:0] i_addr,
     output wire  [3:0] d_data_o,
     input  wire  [3:0] d_data_i,
     output wire  [2:0] d_addr,
@@ -438,7 +440,8 @@ module tinysoc (
         .d_data_i(int_cpu_d_data_i),
         .d_addr  (int_cpu_d_addr),
         .d_wr    (int_cpu_d_wr),
-        .gpo     (io_out[3:0])
+        .gpo     (io_out[3:0]),
+        .gpi     (io_in[7:4])
     );
     
     assign io_out[7:4] = 4'd0;
