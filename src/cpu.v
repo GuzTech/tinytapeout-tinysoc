@@ -179,8 +179,7 @@ module CPU (
 // ======== Misc ======== //
 	wire [3:0] int_addr;
 	
-	// assign int_addr = instr[3:0];
-    assign int_addr = {1'b0, int_rdata1[2:0]};
+    assign int_addr = int_rdata1[2:0];
 
 // ======== Register file ======== //
     // Source register 1 address.
